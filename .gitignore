@@ -7,5 +7,7 @@ __pycache__/
 # resultados temporales / artefactos
 results/*_quick.csv
 
-# el informe no se versiona en el repo (se mantiene solo local)
-report/
+# artefactos de compilación LaTeX (el informe sí se versiona)
+report/*.aux
+report/*.log
+report/*.out
