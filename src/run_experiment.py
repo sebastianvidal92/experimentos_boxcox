@@ -23,14 +23,16 @@ from boxcox_seg import load_pair, make_feature
 
 warnings.filterwarnings("ignore")
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # project root (parent of src/)
 SETS = {
     "Vertical": "Vertical",
     "Horizontal": "Horizontal",
     "Left": "Left",
     "Big": "Big",
 }
-RGB_DIR = os.path.join(ROOT, "rgb")
+RGB_DIR = os.path.join(ROOT, "data", "rgb")
+MASK_DIR = os.path.join(ROOT, "data", "masks")
+RESULTS_DIR = os.path.join(ROOT, "results")
 SIZE = 256
 TRAIN_CAP = 6000  # max training pixels (stratified) per image, keeps SVM/KNN fast
 SEED = 42
@@ -78,7 +80,7 @@ def run(quick=False):
     rows = []
     models = build_models()
     for set_name, folder in SETS.items():
-        mask_dir = os.path.join(ROOT, folder)
+        mask_dir = os.path.join(MASK_DIR, folder)
         files = sorted(f for f in os.listdir(mask_dir) if f.lower().endswith(".jpg"))
         if quick:
             files = files[:3]
@@ -116,7 +118,8 @@ def run(quick=False):
                 models = build_models()
             print(f"[{set_name}] {fi+1}/{len(files)} {fname} done", flush=True)
     df = pd.DataFrame(rows)
-    out = os.path.join(ROOT, "results_ml_quick.csv" if quick else "results_ml.csv")
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    out = os.path.join(RESULTS_DIR, "results_ml_quick.csv" if quick else "results_ml.csv")
     df.to_csv(out, index=False)
     print("Saved", out, "rows:", len(df))
     return out

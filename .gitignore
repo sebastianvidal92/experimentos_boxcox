@@ -3,3 +3,9 @@ __pycache__/
 *.pyc
 .DS_Store
 .ipynb_checkpoints/
+
+# resultados temporales / artefactos
+results/*_quick.csv
+
+# el informe no se versiona en el repo (se mantiene solo local)
+report/

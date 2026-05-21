@@ -11,7 +11,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # project root (parent of src/)
+RESULTS_DIR = os.path.join(ROOT, "results")
 METRICS = ["IoU", "Dice", "Precision", "Recall", "Accuracy"]
 SET_ORDER = ["Vertical", "Horizontal", "Left", "Big"]
 METHOD_ORDER = ["SVM", "LightGBM", "KNN", "LDA", "QDA"]
@@ -54,7 +55,7 @@ def wilcoxon_p(bc, nobc):
 
 
 def main():
-    df = pd.read_csv(os.path.join(ROOT, "results_ml.csv"))
+    df = pd.read_csv(os.path.join(RESULTS_DIR, "results_ml.csv"))
     rng = np.random.default_rng(SEED)
     rows = []
     for s in SET_ORDER:
@@ -76,7 +77,7 @@ def main():
                     p_perm=paired_perm_p(diff, rng=rng),
                 ))
     summ = pd.DataFrame(rows)
-    summ.to_csv(os.path.join(ROOT, "summary_stats.csv"), index=False)
+    summ.to_csv(os.path.join(RESULTS_DIR, "summary_stats.csv"), index=False)
     print("Saved summary_stats.csv")
     write_markdown(summ)
 
@@ -117,7 +118,7 @@ def write_markdown(summ):
                     f"{r.p_perm:.3f} | {r.p_wilcoxon:.3f} |"
                 )
         lines.append("")
-    with open(os.path.join(ROOT, "results_table.md"), "w") as f:
+    with open(os.path.join(RESULTS_DIR, "results_table.md"), "w") as f:
         f.write("\n".join(lines))
     print("Saved results_table.md")
 
