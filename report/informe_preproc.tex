@@ -24,8 +24,11 @@ Este informe compara tres t\'ecnicas de \textbf{prefiltrado por contraste} ---
 (\emph{Contrast Limited Adaptive Histogram Equalization})--- frente al uso de la
 imagen \textbf{sin transformar} (\emph{Raw}), en la segmentaci\'on de grietas a nivel
 de p\'ixel con dos clasificadores sensibles a la distribuci\'on: \textbf{LDA} y
-\textbf{QDA}. El objetivo es cuantificar c\'omo cada preprocesamiento afecta la
-calidad de la segmentaci\'on y el compromiso \emph{precision}--\emph{recall}.
+\textbf{QDA}. El problema es fuertemente \textbf{desbalanceado} (la grieta ocupa
+$\sim$1\,\% de los p\'ixeles), por lo que el objetivo operativo es \textbf{detectar la
+clase rara} sin pasarla por alto. El estudio cuantifica c\'omo cada preprocesamiento
+afecta ese compromiso \emph{precision}--\emph{recall} y, en particular, la capacidad
+de \textbf{detecci\'on} de la grieta (\emph{recall}).
 
 \section*{1. Datos}
 Conjunto de grietas de hormig\'on de \"Ozgenel \& Sorgu\c{c}. Cuatro conjuntos de
@@ -255,15 +258,23 @@ resultan \textbf{estad\'isticamente equivalentes} en la mayor\'ia de los conjunt
 Box--Cox).
 
 \section*{4. Lectura de los resultados}
-El conteo de ``mejor por fila'' sobre las 32 combinaciones (4 conjuntos $\times$ 2
-clasificadores $\times$ 4 m\'etricas) es: \textbf{Raw 21},
-CLAHE 6, HistEq 3 y Box--Cox
-2. Las conclusiones principales:
+Estos resultados deben leerse teniendo presente el \textbf{desbalanceo}: con la grieta
+en $\sim$1\,\% de los p\'ixeles, la \emph{precision} y, con ella, el IoU/Dice se
+inflan f\'acilmente \textbf{sub-segmentando} (prediciendo poca grieta se cometen pocos
+falsos positivos), por lo que un valor alto en esas m\'etricas \textbf{no equivale a
+una mejor detecci\'on} de la fractura. As\'i, aunque al ponderar las cuatro m\'etricas
+por igual el conteo de ``mejor por celda'' (32 combinaciones) lo encabece \emph{Raw}
+(21/32), ese recuento est\'a dominado por
+\emph{precision}/IoU/Dice y \textbf{no debe leerse como que ``Raw es el mejor''}. Las
+conclusiones principales:
 \begin{itemize}
-  \item \textbf{Ninguna transformaci\'on mejora la calidad global de forma
-  consistente.} \emph{Raw} es el mejor en IoU, Dice y \emph{precision} en casi todos
-  los casos. Las tres t\'ecnicas siguen el patr\'on cl\'asico: \textbf{suben el
-  \emph{recall} a costa de la \emph{precision}}.
+  \item \textbf{Box--Cox y CLAHE mejoran la detecci\'on de la grieta.} Ambas
+  \textbf{aumentan el \emph{recall} de forma significativa y consistente} en los cuatro
+  conjuntos ---recuperan m\'as p\'ixeles de fractura---, que es el objetivo prioritario
+  en un problema desbalanceado. El precio es una ca\'ida de \emph{precision}: el
+  cl\'asico compromiso \emph{precision}--\emph{recall}. La leve ventaja de \emph{Raw}
+  en IoU/Dice (que pesan ambas por igual) refleja sobre todo su \emph{precision} alta
+  ``por conservadurismo'', no una mejor localizaci\'on de la grieta.
   \item \textbf{HistEq es, con diferencia, la peor.} La ecualizaci\'on global
   destruye IoU, Dice y \emph{precision} (la \emph{precision} cae a $\sim$10--13\,\%,
   todas con $p<0{,}001$) y es \textbf{muy inestable}: la desviaci\'on del \emph{recall}
@@ -324,15 +335,19 @@ intercambiables imagen a imagen.}\label{fig:bcwin}
 \end{figure}
 
 \section*{6. Conclusi\'on}
-Sobre 200 im\'agenes con medidas de incertidumbre y tests pareados, \textbf{ninguno de
-los tres prefiltrados mejora la calidad global de la segmentaci\'on respecto de usar la
-imagen sin transformar}; todos intercambian \emph{precision} por \emph{recall}. La
-\textbf{ecualizaci\'on global de histograma (HistEq) es claramente perjudicial} y debe
-descartarse. \textbf{CLAHE} y \textbf{Box--Cox} son alternativas suaves y de efecto
-similar: \'utiles cuando la prioridad es \textbf{maximizar la detecci\'on}
-(\emph{recall}), especialmente con \textbf{QDA}, donde no degradan apreciablemente
-IoU/Dice. Si la prioridad es una delimitaci\'on fina de la grieta (mayor IoU/Dice),
-conviene usar la imagen \textbf{Raw} o combinar CLAHE/Box--Cox con un
-post-procesamiento que recupere \emph{precision}.
+Sobre 200 im\'agenes con medidas de incertidumbre y tests pareados, el efecto de los
+prefiltrados es un \textbf{compromiso \emph{precision}--\emph{recall}}: \textbf{Box--Cox
+y CLAHE mejoran la detecci\'on de la grieta} (\emph{recall}) de forma significativa y
+consistente en los cuatro conjuntos, a costa de \emph{precision}. En un problema tan
+\textbf{desbalanceado}, donde el objetivo suele ser \textbf{no pasar por alto la
+fractura}, esa ganancia de \emph{recall} es lo relevante, por lo que \textbf{Box--Cox o
+CLAHE son preferibles}, especialmente con \textbf{QDA} (donde adem\'as IoU/Dice apenas
+se degradan). La \textbf{ecualizaci\'on global de histograma (HistEq) es la excepci\'on}:
+aunque tambi\'en sube el \emph{recall}, lo hace de forma err\'atica e inunda la imagen
+de falsos positivos, hundiendo \emph{precision}, IoU y Dice; debe \textbf{descartarse}.
+La imagen \emph{Raw} solo conviene si se invierte la prioridad hacia \textbf{maximizar
+la \emph{precision}} (delimitaci\'on fina), asumiendo dejar grietas sin detectar; en ese
+caso es preferible combinar Box--Cox/CLAHE con un post-procesamiento que recupere
+\emph{precision} antes que renunciar a la detecci\'on.
 
 \end{document}
