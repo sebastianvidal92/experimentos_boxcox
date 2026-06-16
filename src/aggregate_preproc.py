@@ -58,10 +58,16 @@ def wilcoxon_p(tf, ref):
         return np.nan
 
 
+# Comparaciones directas entre transformaciones (a vs b), pareadas por imagen.
+# diff = media(a) - media(b); positivo => 'a' mejor (todas las métricas: mayor=mejor).
+PAIRS = [("boxcox", "histeq"), ("boxcox", "clahe")]
+
+
 def main():
     df = pd.read_csv(os.path.join(RESULTS_DIR, "results_preproc.csv"))
     rng = np.random.default_rng(SEED)
     rows = []
+    pair_rows = []
     for s in SET_ORDER:
         for m in METHOD_ORDER:
             sub = df[(df["set"] == s) & (df["method"] == m)]
@@ -81,10 +87,28 @@ def main():
                         p_perm=paired_perm_p(diff, rng=rng),
                         p_wilcoxon=wilcoxon_p(cur, ref),
                     ))
+                for a, b in PAIRS:
+                    va = wide[(metric, a)].to_numpy()
+                    vb = wide[(metric, b)].to_numpy()
+                    diff = va - vb
+                    lo_d, hi_d = boot_ci(diff, rng=rng)
+                    pair_rows.append(dict(
+                        set=s, method=m, metric=metric, pair=f"{a}_vs_{b}",
+                        a=a, b=b, n=len(va),
+                        a_mean=np.nanmean(va) * 100, a_std=np.nanstd(va, ddof=1) * 100,
+                        b_mean=np.nanmean(vb) * 100, b_std=np.nanstd(vb, ddof=1) * 100,
+                        diff_mean=np.nanmean(diff) * 100,
+                        diff_ci_low=lo_d * 100, diff_ci_high=hi_d * 100,
+                        p_perm=paired_perm_p(diff, rng=rng),
+                        p_wilcoxon=wilcoxon_p(va, vb),
+                    ))
     summ = pd.DataFrame(rows)
     summ.to_csv(os.path.join(RESULTS_DIR, "summary_preproc.csv"), index=False)
     print("Saved summary_preproc.csv")
-    write_markdown(summ)
+    pairs = pd.DataFrame(pair_rows)
+    pairs.to_csv(os.path.join(RESULTS_DIR, "pairwise_preproc.csv"), index=False)
+    print("Saved pairwise_preproc.csv")
+    write_markdown(summ, pairs)
 
 
 def stars(p):
@@ -109,7 +133,36 @@ def cond_means(summ, s, m, metric):
     return out
 
 
-def write_markdown(summ):
+PAIR_LABEL = {"boxcox_vs_histeq": "Box-Cox vs HistEq",
+              "boxcox_vs_clahe": "Box-Cox vs CLAHE"}
+
+
+def pairwise_markdown(pairs):
+    """Tablas de comparación directa entre transformaciones (Δ = a − b, pp)."""
+    lines = ["## Comparación directa entre transformaciones", "",
+             "`Δ` = media(A) − media(B) en puntos porcentuales, **pareada por imagen** "
+             "(positivo ⇒ A mejor). Significancia del test pareado de permutación: "
+             "\\* p<0.05, \\*\\* p<0.01, \\*\\*\\* p<0.001. Las medias absolutas de cada "
+             "preprocesamiento están en las tablas por set de arriba.", ""]
+    for pair in pairs["pair"].unique():
+        a_lab, b_lab = PAIR_LABEL[pair].split(" vs ")
+        lines.append(f"### {PAIR_LABEL[pair]}  (Δ = {a_lab} − {b_lab})")
+        lines.append("")
+        lines += ["| Set | Clf | " + " | ".join(METRICS) + " |",
+                  "|---|---|" + "|".join(["---"] * len(METRICS)) + "|"]
+        for s in SET_ORDER:
+            for m in METHOD_ORDER:
+                cells = [s, m]
+                for metric in METRICS:
+                    r = pairs[(pairs["pair"] == pair) & (pairs["set"] == s) &
+                              (pairs["method"] == m) & (pairs["metric"] == metric)].iloc[0]
+                    cells.append(f"{r.diff_mean:+.1f}{stars(r.p_perm)}")
+                lines.append("| " + " | ".join(cells) + " |")
+        lines.append("")
+    return lines
+
+
+def write_markdown(summ, pairs=None):
     lines = [
         "# Segmentación de grietas: comparación de preprocesamientos (LDA y QDA)",
         "",
@@ -157,6 +210,8 @@ def write_markdown(summ):
     for c in COND_ORDER:
         lines.append(f"| {COND_LABEL[c]} | {win[c]} |")
     lines.append("")
+    if pairs is not None:
+        lines += pairwise_markdown(pairs)
     with open(os.path.join(RESULTS_DIR, "preproc_table.md"), "w") as f:
         f.write("\n".join(lines))
     print("Saved preproc_table.md")

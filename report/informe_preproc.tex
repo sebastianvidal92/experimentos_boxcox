@@ -188,6 +188,72 @@ M\'etodo & Raw & Box--Cox & HistEq & CLAHE \\
 \end{tabular}
 \end{table}
 
+\medskip
+\textbf{Comparaci\'on directa entre transformaciones.} Las tablas anteriores comparan
+cada preprocesamiento contra \emph{Raw}. Las dos siguientes contrastan las
+transformaciones \textbf{entre s\'i} (pareando imagen con imagen), que es la
+comparaci\'on relevante para decidir entre ellas.
+
+\begin{table}[H]\centering\small
+\caption{Comparaci\'on directa \textbf{Box--Cox vs HistEq}: $\Delta=$ media(Box--Cox)$-$media(HistEq) en puntos porcentuales, pareada imagen con imagen (positivo $\Rightarrow$ Box--Cox mejor). Significancia del test de permutaci\'on.}\label{tab:bc_he}
+\begin{tabular}{l cccc}
+\toprule
+M\'etodo & IoU & Dice & Precision & Recall \\
+\midrule
+\multicolumn{5}{l}{\textit{Verticales}} \\
+\quad LDA & $+22.7$$^{***}$ & $+30.4$$^{***}$ & $+31.2$$^{***}$ & $+9.3$$^{*}$ \\
+\quad QDA & $+26.9$$^{***}$ & $+34.2$$^{***}$ & $+49.7$$^{***}$ & $-7.9$ \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Horizontales}} \\
+\quad LDA & $+18.9$$^{***}$ & $+27.5$$^{***}$ & $+23.5$$^{***}$ & $+19.4$$^{***}$ \\
+\quad QDA & $+25.5$$^{***}$ & $+35.0$$^{***}$ & $+52.7$$^{***}$ & $+6.2$ \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Oblicuas (izq.\,$\to$\,der.)}} \\
+\quad LDA & $+19.2$$^{***}$ & $+26.4$$^{***}$ & $+23.1$$^{***}$ & $+7.1$$^{*}$ \\
+\quad QDA & $+30.8$$^{***}$ & $+40.3$$^{***}$ & $+51.3$$^{***}$ & $+0.0$ \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Grandes}} \\
+\quad LDA & $+14.6$$^{***}$ & $+20.7$$^{***}$ & $+19.8$$^{***}$ & $-6.0$$^{**}$ \\
+\quad QDA & $+22.4$$^{***}$ & $+29.7$$^{***}$ & $+36.0$$^{***}$ & $-12.8$$^{***}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]\centering\small
+\caption{Comparaci\'on directa \textbf{Box--Cox vs CLAHE}: $\Delta=$ media(Box--Cox)$-$media(CLAHE) en puntos porcentuales, pareada imagen con imagen (positivo $\Rightarrow$ Box--Cox mejor). Significancia del test de permutaci\'on.}\label{tab:bc_cl}
+\begin{tabular}{l cccc}
+\toprule
+M\'etodo & IoU & Dice & Precision & Recall \\
+\midrule
+\multicolumn{5}{l}{\textit{Verticales}} \\
+\quad LDA & $+3.2$$^{*}$ & $+3.8$$^{*}$ & $+8.3$$^{**}$ & $-2.9$$^{**}$ \\
+\quad QDA & $-1.0$ & $-1.6$ & $+3.8$ & $-2.6$ \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Horizontales}} \\
+\quad LDA & $+6.9$$^{***}$ & $+8.6$$^{***}$ & $+13.2$$^{***}$ & $-5.9$$^{***}$ \\
+\quad QDA & $+2.5$$^{***}$ & $+2.7$$^{***}$ & $+9.5$$^{***}$ & $-2.0$$^{*}$ \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Oblicuas (izq.\,$\to$\,der.)}} \\
+\quad LDA & $+0.3$ & $+0.0$ & $+2.9$ & $-4.1$$^{***}$ \\
+\quad QDA & $+0.3$ & $+0.0$ & $+5.5$$^{*}$ & $-2.0$$^{*}$ \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Grandes}} \\
+\quad LDA & $-0.9$ & $-1.3$ & $-0.1$ & $+2.1$ \\
+\quad QDA & $-0.2$ & $-0.6$ & $+1.4$ & $+2.2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Box--Cox supera a HistEq} de forma masiva y significativa en IoU, Dice y
+\emph{precision} en los ocho casos (entre $+15$ y $+53$ puntos, $p<0{,}001$), lo que
+confirma que HistEq es el preprocesamiento m\'as d\'ebil; HistEq solo iguala o supera
+en \emph{recall} de manera inconsistente. \textbf{Frente a CLAHE} las diferencias son
+mucho menores: Box--Cox tiende a mayor \emph{precision} (y a mayor IoU/Dice en grietas
+horizontales), mientras que CLAHE consigue mayor \emph{recall}; en IoU/Dice ambos
+resultan \textbf{estad\'isticamente equivalentes} en la mayor\'ia de los conjuntos
+(diferencias peque\~nas y no significativas, salvo en horizontales, donde gana
+Box--Cox).
+
 \section*{4. Lectura de los resultados}
 El conteo de ``mejor por fila'' sobre las 32 combinaciones (4 conjuntos $\times$ 2
 clasificadores $\times$ 4 m\'etricas) es: \textbf{Raw 21},

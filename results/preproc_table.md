@@ -92,3 +92,33 @@ Conteo sobre 32 filas (4 sets × 2 clasificadores × 4 métricas).
 | Box-Cox | 2 |
 | HistEq | 3 |
 | CLAHE | 6 |
+
+## Comparación directa entre transformaciones
+
+`Δ` = media(A) − media(B) en puntos porcentuales, **pareada por imagen** (positivo ⇒ A mejor). Significancia del test pareado de permutación: \* p<0.05, \*\* p<0.01, \*\*\* p<0.001. Las medias absolutas de cada preprocesamiento están en las tablas por set de arriba.
+
+### Box-Cox vs HistEq  (Δ = Box-Cox − HistEq)
+
+| Set | Clf | IoU | Dice | Precision | Recall |
+|---|---|---|---|---|---|
+| Vertical | LDA | +22.7*** | +30.4*** | +31.2*** | +9.3* |
+| Vertical | QDA | +26.9*** | +34.2*** | +49.7*** | -7.9 |
+| Horizontal | LDA | +18.9*** | +27.5*** | +23.5*** | +19.4*** |
+| Horizontal | QDA | +25.5*** | +35.0*** | +52.7*** | +6.2 |
+| Left | LDA | +19.2*** | +26.4*** | +23.1*** | +7.1* |
+| Left | QDA | +30.8*** | +40.3*** | +51.3*** | +0.0 |
+| Big | LDA | +14.6*** | +20.7*** | +19.8*** | -6.0** |
+| Big | QDA | +22.4*** | +29.7*** | +36.0*** | -12.8*** |
+
+### Box-Cox vs CLAHE  (Δ = Box-Cox − CLAHE)
+
+| Set | Clf | IoU | Dice | Precision | Recall |
+|---|---|---|---|---|---|
+| Vertical | LDA | +3.2* | +3.8* | +8.3** | -2.9** |
+| Vertical | QDA | -1.0 | -1.6 | +3.8 | -2.6 |
+| Horizontal | LDA | +6.9*** | +8.6*** | +13.2*** | -5.9*** |
+| Horizontal | QDA | +2.5*** | +2.7*** | +9.5*** | -2.0* |
+| Left | LDA | +0.3 | +0.0 | +2.9 | -4.1*** |
+| Left | QDA | +0.3 | +0.0 | +5.5* | -2.0* |
+| Big | LDA | -0.9 | -1.3 | -0.1 | +2.1 |
+| Big | QDA | -0.2 | -0.6 | +1.4 | +2.2 |

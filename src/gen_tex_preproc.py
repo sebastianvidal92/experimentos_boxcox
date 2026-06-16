@@ -12,6 +12,7 @@ RESULTS_DIR = os.path.join(ROOT, "results")
 REPORT_DIR = os.path.join(ROOT, "report")
 
 d = pd.read_csv(os.path.join(RESULTS_DIR, "summary_preproc.csv"))
+pw = pd.read_csv(os.path.join(RESULTS_DIR, "pairwise_preproc.csv"))
 raw_lam = pd.read_csv(os.path.join(RESULTS_DIR, "results_preproc.csv"))
 lam = raw_lam[raw_lam.condition == "boxcox"].groupby("set").lam.mean().round(2).to_dict()
 
@@ -72,6 +73,27 @@ def metric_table(metric, caption, label):
     return "\n".join(out)
 
 
+def pairwise_table(pair, caption, label):
+    """Tabla de comparación directa A vs B: Δ = media(A) − media(B), pp, con stars."""
+    out = ["\\begin{table}[H]\\centering\\small",
+           f"\\caption{{{caption}}}\\label{{{label}}}",
+           "\\begin{tabular}{l cccc}", "\\toprule",
+           "M\\'etodo & IoU & Dice & Precision & Recall \\\\", "\\midrule"]
+    for skey, sname in SETS:
+        out.append(f"\\multicolumn{{5}}{{l}}{{\\textit{{{sname}}}}} \\\\")
+        for mth in METHODS:
+            cells = []
+            for metric in METRICS:
+                r = pw[(pw["pair"] == pair) & (pw["set"] == skey) &
+                       (pw["method"] == mth) & (pw["metric"] == metric)].iloc[0]
+                cells.append(f"${r.diff_mean:+.1f}$" + stars(r.p_perm))
+            out.append(f"\\quad {mth} & " + " & ".join(cells) + " \\\\")
+        out.append("\\addlinespace")
+    out[-1] = "\\bottomrule"
+    out += ["\\end{tabular}", "\\end{table}"]
+    return "\n".join(out)
+
+
 def summary_table():
     """Promedio sobre los 4 sets + conteo de 'mejor por fila'."""
     df = raw_lam.groupby(["method", "condition"])[METRICS].mean() * 100
@@ -119,6 +141,16 @@ tbl_prec = metric_table("Precision", "\\emph{Precision} (\\%) de la clase grieta
 tbl_rec = metric_table("Recall", "\\emph{Recall} (\\%) de la clase grieta, "
     "media\\,$\\pm$\\,desv.\\ est. Significancia frente a Raw.", "tab:rec")
 tbl_avg = summary_table()
+pair_he = pairwise_table("boxcox_vs_histeq",
+    "Comparaci\\'on directa \\textbf{Box--Cox vs HistEq}: $\\Delta=$ media(Box--Cox)"
+    "$-$media(HistEq) en puntos porcentuales, pareada imagen con imagen "
+    "(positivo $\\Rightarrow$ Box--Cox mejor). Significancia del test de permutaci\\'on.",
+    "tab:bc_he")
+pair_cl = pairwise_table("boxcox_vs_clahe",
+    "Comparaci\\'on directa \\textbf{Box--Cox vs CLAHE}: $\\Delta=$ media(Box--Cox)"
+    "$-$media(CLAHE) en puntos porcentuales, pareada imagen con imagen "
+    "(positivo $\\Rightarrow$ Box--Cox mejor). Significancia del test de permutaci\\'on.",
+    "tab:bc_cl")
 
 doc = r"""\documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
@@ -192,6 +224,24 @@ $^{***}p<0{,}001$. En las tablas, \textbf{en negrita} el mejor valor de cada fil
 
 \section*{3. Resultados}
 """ + tbl_avg + "\n\n" + tbl_iou + "\n\n" + tbl_dice + "\n\n" + tbl_prec + "\n\n" + tbl_rec + r"""
+
+\medskip
+\textbf{Comparaci\'on directa entre transformaciones.} Las tablas anteriores comparan
+cada preprocesamiento contra \emph{Raw}. Las dos siguientes contrastan las
+transformaciones \textbf{entre s\'i} (pareando imagen con imagen), que es la
+comparaci\'on relevante para decidir entre ellas.
+
+""" + pair_he + "\n\n" + pair_cl + r"""
+
+\textbf{Box--Cox supera a HistEq} de forma masiva y significativa en IoU, Dice y
+\emph{precision} en los ocho casos (entre $+15$ y $+53$ puntos, $p<0{,}001$), lo que
+confirma que HistEq es el preprocesamiento m\'as d\'ebil; HistEq solo iguala o supera
+en \emph{recall} de manera inconsistente. \textbf{Frente a CLAHE} las diferencias son
+mucho menores: Box--Cox tiende a mayor \emph{precision} (y a mayor IoU/Dice en grietas
+horizontales), mientras que CLAHE consigue mayor \emph{recall}; en IoU/Dice ambos
+resultan \textbf{estad\'isticamente equivalentes} en la mayor\'ia de los conjuntos
+(diferencias peque\~nas y no significativas, salvo en horizontales, donde gana
+Box--Cox).
 
 \section*{4. Lectura de los resultados}
 El conteo de ``mejor por fila'' sobre las 32 combinaciones (4 conjuntos $\times$ 2
